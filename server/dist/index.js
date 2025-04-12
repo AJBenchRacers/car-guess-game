@@ -7,17 +7,38 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const pg_1 = require("pg");
+const setDailyCar_1 = require("./setDailyCar");
+const node_cron_1 = __importDefault(require("node-cron"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const port = process.env.PORT || 3000;
-// Database connection
-const pool = new pg_1.Pool({
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    password: process.env.DB_PASSWORD,
-    port: parseInt(process.env.DB_PORT || '5432'),
+// Set up cron job to change car at midnight
+node_cron_1.default.schedule('0 0 * * *', async () => {
+    console.log('Running daily car update at midnight...');
+    try {
+        await (0, setDailyCar_1.setDailyCar)();
+        console.log('Successfully updated daily car');
+    }
+    catch (error) {
+        console.error('Error updating daily car:', error);
+    }
+}, {
+    scheduled: true,
+    timezone: "UTC"
 });
+// Database connection
+const pool = new pg_1.Pool(process.env.DATABASE_URL
+    ? {
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false }
+    }
+    : {
+        user: process.env.DB_USER,
+        host: process.env.DB_HOST,
+        database: process.env.DB_NAME,
+        password: process.env.DB_PASSWORD,
+        port: parseInt(process.env.DB_PORT || '5432'),
+    });
 // Middleware
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());

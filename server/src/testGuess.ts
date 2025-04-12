@@ -1,6 +1,6 @@
-const fetch = require('node-fetch');
+import fetch from 'node-fetch';
 
-async function testGuess() {
+export async function testGuess() {
   try {
     const response = await fetch('http://localhost:3000/api/guess', {
       method: 'POST',
