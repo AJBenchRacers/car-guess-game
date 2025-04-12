@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { SimilarityValue as _SimilarityValue, CarSimilarities as _CarSimilarities, CarDetails, GuessFeedback } from '../types';
+import type { SimilarityValue as _SimilarityValue, CarSimilarities as _CarSimilarities, CarDetails as _CarDetails } from '../types';
+import { GuessFeedback } from '../types';
 import { API_URL } from '../config';
 
-interface Guess {
+interface _Guess {
   model: string;
   guessNumber?: number;
 }
@@ -19,7 +20,7 @@ const CarGuessingGame: React.FC = () => {
   const [isCorrect, setIsCorrect] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [gameReady, setGameReady] = useState(false);
+  const [_gameReady, setGameReady] = useState(false);
   const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -298,7 +299,7 @@ const CarGuessingGame: React.FC = () => {
     if (showFAQ) setShowFAQ(false);
   };
 
-  const toggleFAQ = () => {
+  const _toggleFAQ = () => {
     setShowFAQ(!showFAQ);
     if (showHowToPlay) setShowHowToPlay(false);
   };
