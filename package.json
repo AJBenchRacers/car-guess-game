@@ -1,8 +1,30 @@
 {
+  "name": "car-guess-game",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "install:all": "npm install && npm run install:client && npm run install:server",
+    "install:client": "cd client && npm install",
+    "install:server": "cd server && npm install",
+    "dev:client": "cd client && npm run dev",
+    "dev:server": "cd server && npm run dev",
+    "build:client": "cd client && npm run build",
+    "build:server": "cd server && npm run build",
+    "start:client": "cd client && npm run preview",
+    "start:server": "cd server && npm start",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "build": "npm run build:server && npm run build:client",
+    "start": "concurrently \"npm run start:server\" \"npm run start:client\""
+  },
   "dependencies": {
     "@types/axios": "^0.9.36",
     "autoprefixer": "^10.4.21",
     "axios": "^1.8.4",
+    "concurrently": "^8.2.2",
     "postcss": "^8.5.3",
     "tailwindcss": "^4.1.3"
   }

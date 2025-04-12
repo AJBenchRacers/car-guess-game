@@ -1,18 +1,6 @@
-// Base API URL
-export const API_URL = process.env.NODE_ENV === 'production'
-  ? import.meta.env.VITE_API_URL || 'https://cartexto-be.vercel.app'
-  : 'http://localhost:3000';
-
-// API endpoints
-export const ENDPOINTS = {
-  GAME_STATE: `${API_URL}/api/game-state`,
-  SEARCH: `${API_URL}/api/search/models`,
-  GUESS: `${API_URL}/api/guess`
-};
-
-// API configuration
-export const API_CONFIG = {
-  headers: {
-    'Content-Type': 'application/json'
-  }
-}; 
+// Using environment variables for flexible deployment
+export const API_URL = 
+  process.env.VITE_API_URL || // Preferred way to set API URL in production 
+  (process.env.NODE_ENV === 'production' 
+    ? 'https://car-guess-game-server.vercel.app'  // Default production URL (replace with your actual Vercel URL)
+    : 'http://localhost:3000'); // Development URL 

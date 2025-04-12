@@ -1,0 +1,16 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const importCars_1 = require("./db/importCars");
+async function main() {
+    console.log('Starting car import process...');
+    try {
+        await (0, importCars_1.importCSV)();
+        console.log('Import completed successfully!');
+        process.exit(0);
+    }
+    catch (error) {
+        console.error('Error during import:', error);
+        process.exit(1);
+    }
+}
+main();

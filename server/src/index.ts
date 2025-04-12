@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { pool } from './db/config';
+import { Pool } from 'pg';
 import { setDailyCar } from './setDailyCar';
 import cron from 'node-cron';
 
@@ -10,67 +10,39 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Middleware with specific CORS configuration
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://cartexto-fe.vercel.app']
-    : 'http://localhost:5173',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-
-app.use(express.json());
-
-// Basic health check endpoint with DB test
-app.get('/', async (req, res) => {
+// Set up cron job to change car at midnight
+cron.schedule('0 0 * * *', async () => {
+  console.log('Running daily car update at midnight...');
   try {
-    // Test database connection
-    const testResult = await pool.query('SELECT NOW()');
-    const tablesResult = await pool.query(`
-      SELECT table_name 
-      FROM information_schema.tables 
-      WHERE table_schema = 'public'
-    `);
-    
-    res.json({ 
-      status: 'ok',
-      database: 'connected',
-      timestamp: testResult.rows[0].now,
-      tables: tablesResult.rows.map(row => row.table_name),
-      env: {
-        node_env: process.env.NODE_ENV,
-        host: process.env.DB_HOST,
-        database: process.env.DB_NAME,
-        port: process.env.DB_PORT
-      }
-    });
-  } catch (err) {
-    const error = err as Error;
-    console.error('Database test failed:', error);
-    res.status(500).json({ 
-      status: 'error',
-      message: 'Database connection failed',
-      error: error.message,
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
+    await setDailyCar();
+    console.log('Successfully updated daily car');
+  } catch (error) {
+    console.error('Error updating daily car:', error);
   }
+}, {
+  scheduled: true,
+  timezone: "UTC"
 });
 
-// Set up cron job to change car at midnight
-if (process.env.NODE_ENV !== 'production') {
-  cron.schedule('0 0 * * *', async () => {
-    console.log('Running daily car update at midnight...');
-    try {
-      await setDailyCar();
-      console.log('Successfully updated daily car');
-    } catch (error) {
-      console.error('Error updating daily car:', error);
-    }
-  }, {
-    scheduled: true,
-    timezone: "UTC"
-  });
-}
+// Database connection
+const pool = new Pool(
+  process.env.DATABASE_URL 
+    ? { 
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false }
+      } 
+    : {
+        user: process.env.DB_USER,
+        host: process.env.DB_HOST,
+        database: process.env.DB_NAME,
+        password: process.env.DB_PASSWORD,
+        port: parseInt(process.env.DB_PORT || '5432'),
+      }
+);
+
+// Middleware
+app.use(cors());
+app.use(express.json());
 
 // Function to get today's car or select a new one
 async function getTodaysCar() {
@@ -156,25 +128,20 @@ app.get('/api/search/models', async (req, res) => {
 // Get game state endpoint to check if game is started
 app.get('/api/game-state', async (req, res) => {
   try {
-    // First try to connect to the database
-    const connectionTest = await pool.query('SELECT NOW()');
-    console.log('Database connection successful:', connectionTest.rows[0]);
-
-    // Then check for today's car
-    const result = await pool.query('SELECT * FROM daily_cars WHERE date = CURRENT_DATE');
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    
+    const result = await pool.query(
+      'SELECT * FROM daily_cars WHERE date = $1',
+      [todayStart]
+    );
     
     res.json({
-      hasGame: result.rows.length > 0,
-      dbConnected: true
+      hasGame: result.rows.length > 0
     });
-  } catch (error: any) {
-    console.error('Error in /api/game-state:', error);
-    res.status(500).json({ 
-      error: 'Database connection failed',
-      message: error.message,
-      hasGame: false,
-      dbConnected: false
-    });
+  } catch (error) {
+    console.error('Error getting game state:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -346,20 +313,6 @@ app.get('/api/cars/count', async (req, res) => {
   }
 });
 
-// Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
-});
-
-// Export for Vercel
-module.exports = app;
-
-// Start server if not running in Vercel
-if (process.env.VERCEL !== '1') {
-  app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
-  });
-}
-
-export default app; 
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+}); 

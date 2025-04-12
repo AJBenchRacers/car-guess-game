@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Audio Test</title>
+</head>
+<body>
+    <h1>Audio Test Page</h1>
+    <button onclick="playAudio1()">Play Audio (Method 1)</button>
+    <button onclick="playAudio2()">Play Audio (Method 2)</button>
+    <button onclick="playAudio3()">Play Audio (Method 3)</button>
+    <br><br>
+    <audio id="audioElement" controls>
+        <source src="victory.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <script>
+        function playAudio1() {
+            const audio = new Audio('victory.mp3');
+            audio.play().catch(e => console.error('Play error 1:', e));
+        }
+
+        function playAudio2() {
+            document.getElementById('audioElement').play().catch(e => console.error('Play error 2:', e));
+        }
+
+        function playAudio3() {
+            const audio = new Audio('Lexus LFA V10 Exhaust Revs - Amazing Sound!!-yt.savetube.me-[AudioTrimmer.com].mp3');
+            audio.play().catch(e => console.error('Play error 3:', e));
+        }
+    </script>
+</body>
+</html> 
