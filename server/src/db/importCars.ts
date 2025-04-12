@@ -67,10 +67,17 @@ async function importCSV() {
       // Convert cylinders to integer if possible
       let cylinders = null;
       if (record.cylinders) {
-        const cylinderNum = parseInt(record.cylinders);
-        if (!isNaN(cylinderNum)) {
+        // Remove any non-numeric characters and parse
+        const cylinderStr = record.cylinders.toString().replace(/[^0-9]/g, '');
+        const cylinderNum = parseInt(cylinderStr);
+        if (!isNaN(cylinderNum) && cylinderNum > 0) {
           cylinders = cylinderNum;
+          console.log(`Parsed cylinders for ${record.brand} ${record.model}: ${cylinders}`);
+        } else {
+          console.log(`Failed to parse cylinders for ${record.brand} ${record.model}. Raw value: ${record.cylinders}`);
         }
+      } else {
+        console.log(`No cylinders data for ${record.brand} ${record.model}`);
       }
 
       // Convert displacement to integer if possible

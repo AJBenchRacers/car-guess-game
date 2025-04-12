@@ -1,25 +1,69 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { Pool } from 'pg';
+import { pool } from './db/config';
+import { setDailyCar } from './setDailyCar';
+import cron from 'node-cron';
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Database connection
-const pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: parseInt(process.env.DB_PORT || '5432'),
+// Middleware with specific CORS configuration
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://cartexto-client.vercel.app', 'https://cartexto-client-fckjm8fnv-alexs-projects-38194e0e.vercel.app']
+    : 'http://localhost:5173',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+app.use(express.json());
+
+// Basic health check endpoint with DB test
+app.get('/', async (req, res) => {
+  try {
+    // Test database connection
+    const testResult = await pool.query('SELECT NOW()');
+    res.json({ 
+      status: 'ok',
+      database: 'connected',
+      timestamp: testResult.rows[0].now,
+      env: {
+        host: process.env.DB_HOST,
+        database: process.env.DB_NAME,
+        port: process.env.DB_PORT
+      }
+    });
+  } catch (err) {
+    const error = err as Error;
+    console.error('Database test failed:', error);
+    res.status(500).json({ 
+      status: 'error',
+      message: 'Database connection failed',
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
 });
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+// Set up cron job to change car at midnight
+if (process.env.NODE_ENV !== 'production') {
+  cron.schedule('0 0 * * *', async () => {
+    console.log('Running daily car update at midnight...');
+    try {
+      await setDailyCar();
+      console.log('Successfully updated daily car');
+    } catch (error) {
+      console.error('Error updating daily car:', error);
+    }
+  }, {
+    scheduled: true,
+    timezone: "UTC"
+  });
+}
 
 // Function to get today's car or select a new one
 async function getTodaysCar() {
@@ -79,17 +123,23 @@ app.get('/api/search/models', async (req, res) => {
       return res.json([]);
     }
     
-    // Search for cars where either the model or brand starts with the query
+    // Simple search query that returns both brand and model
     const result = await pool.query(
-      `SELECT DISTINCT model 
+      `SELECT DISTINCT brand, model 
        FROM cars 
-       WHERE LOWER(model) LIKE LOWER($1) OR LOWER(brand) LIKE LOWER($1)
-       ORDER BY model 
-       LIMIT 10`,
-      [`${query}%`]
+       WHERE LOWER(model) LIKE LOWER($1) 
+          OR LOWER(brand) LIKE LOWER($1)
+       ORDER BY brand, model`,
+      [`%${query}%`]
     );
     
-    res.json(result.rows.map(row => row.model));
+    // Format results to include brand and model
+    const formattedResults = result.rows.map(row => ({
+      display: `${row.brand} ${row.model}`,
+      model: row.model
+    }));
+    
+    res.json(formattedResults);
   } catch (error) {
     console.error('Error searching for models:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -99,19 +149,13 @@ app.get('/api/search/models', async (req, res) => {
 // Get game state endpoint to check if game is started
 app.get('/api/game-state', async (req, res) => {
   try {
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    
-    const result = await pool.query(
-      'SELECT * FROM daily_cars WHERE date = $1',
-      [todayStart]
-    );
+    const result = await pool.query('SELECT * FROM daily_car WHERE id = 1');
     
     res.json({
       hasGame: result.rows.length > 0
     });
   } catch (error) {
-    console.error('Error getting game state:', error);
+    console.error('Error fetching game state:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -146,8 +190,14 @@ app.post('/api/guess', async (req, res) => {
       });
     }
 
-    // Check if the guess is correct
-    const isCorrect = guessedCar.id === correctCar.id;
+    // Enhanced debug logging
+    console.log('Full guessed car data:', JSON.stringify(guessedCar, null, 2));
+    console.log('Full correct car data:', JSON.stringify(correctCar, null, 2));
+
+    // Check if the guess is correct - must match both model and year exactly
+    const isCorrect = guessedCar.id === correctCar.id || 
+                     (guessedCar.model.toLowerCase() === correctCar.model.toLowerCase() && 
+                      guessedCar.production_from_year === correctCar.production_from_year);
 
     // Helper function to compare numeric values and add direction indicators
     const compareNumeric = (guessedValue: number, correctValue: number): SimilarityValue => {
@@ -179,10 +229,12 @@ app.post('/api/guess', async (req, res) => {
         isMatch: guessedCar.segment === correctCar.segment
       },
       cylinders: {
-        value: guessedCar.cylinders || 'Unknown',
+        value: guessedCar.cylinders !== null ? guessedCar.cylinders : 'Unknown',
         isMatch: guessedCar.cylinders === correctCar.cylinders,
         isClose: guessedCar.cylinders && correctCar.cylinders && Math.abs(guessedCar.cylinders - correctCar.cylinders) <= 2,
-        direction: guessedCar.cylinders && correctCar.cylinders ? (guessedCar.cylinders < correctCar.cylinders ? 'higher' : guessedCar.cylinders > correctCar.cylinders ? 'lower' : null) : null
+        direction: guessedCar.cylinders && correctCar.cylinders ? 
+          (guessedCar.cylinders < correctCar.cylinders ? 'higher' : 
+           guessedCar.cylinders > correctCar.cylinders ? 'lower' : null) : null
       },
       displacement: {
         value: guessedCar.displacement || 'Unknown',
@@ -276,6 +328,18 @@ app.get('/api/cars/count', async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-}); 
+// Error handling middleware
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Something went wrong!' });
+});
+
+// Export for Vercel
+export default app;
+
+// Start server if not in Vercel environment
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}`);
+  });
+} 

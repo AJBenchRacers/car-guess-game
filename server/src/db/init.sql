@@ -1,12 +1,32 @@
+DROP TABLE IF EXISTS daily_cars;
+DROP TABLE IF EXISTS cars;
+
 CREATE TABLE cars (
     id SERIAL PRIMARY KEY,
-    make VARCHAR(100) NOT NULL,
-    model VARCHAR(100) NOT NULL,
+    make TEXT NOT NULL,
+    model TEXT NOT NULL,
     year INTEGER NOT NULL,
-    body_type VARCHAR(100) NOT NULL,
-    engine VARCHAR(100),
-    country VARCHAR(100) NOT NULL,
-    image_url TEXT
+    body_type TEXT NOT NULL,
+    engine TEXT,
+    country TEXT NOT NULL,
+    image_url TEXT,
+    brand TEXT,
+    production_from_year INTEGER,
+    segment TEXT,
+    cylinders INTEGER,
+    displacement INTEGER,
+    drive_type TEXT,
+    body_style TEXT,
+    to_year INTEGER,
+    title TEXT,
+    description TEXT,
+    engine_speed TEXT,
+    power INTEGER,
+    torque INTEGER,
+    fuel_system TEXT,
+    fuel TEXT,
+    fuel_capacity NUMERIC(10,2),
+    top_speed INTEGER
 );
 
 CREATE TABLE daily_cars (

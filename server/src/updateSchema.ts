@@ -31,21 +31,21 @@ async function updateSchema() {
     
     // Add the new columns if they don't exist
     const columnsToAdd = [
-      { name: 'brand', type: 'VARCHAR(100)' },
+      { name: 'brand', type: 'TEXT' },
       { name: 'production_from_year', type: 'INTEGER' },
-      { name: 'segment', type: 'VARCHAR(100)' },
+      { name: 'segment', type: 'TEXT' },
       { name: 'cylinders', type: 'INTEGER' },
       { name: 'displacement', type: 'INTEGER' },
-      { name: 'drive_type', type: 'VARCHAR(100)' },
-      { name: 'body_style', type: 'VARCHAR(100)' },
+      { name: 'drive_type', type: 'TEXT' },
+      { name: 'body_style', type: 'TEXT' },
       { name: 'to_year', type: 'INTEGER' },
       { name: 'title', type: 'TEXT' },
       { name: 'description', type: 'TEXT' },
-      { name: 'engine_speed', type: 'VARCHAR(100)' },
+      { name: 'engine_speed', type: 'TEXT' },
       { name: 'power', type: 'INTEGER' },
       { name: 'torque', type: 'INTEGER' },
-      { name: 'fuel_system', type: 'VARCHAR(100)' },
-      { name: 'fuel', type: 'VARCHAR(100)' },
+      { name: 'fuel_system', type: 'TEXT' },
+      { name: 'fuel', type: 'TEXT' },
       { name: 'fuel_capacity', type: 'NUMERIC(10,2)' },
       { name: 'top_speed', type: 'INTEGER' }
     ];
