@@ -1,12 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import type { SimilarityValue as _SimilarityValue, CarSimilarities as _CarSimilarities, CarDetails as _CarDetails } from '../types';
 import { GuessFeedback } from '../types';
 import { API_URL } from '../config';
-
-interface _Guess {
-  model: string;
-  guessNumber?: number;
-}
 
 interface SearchResult {
   display: string;
@@ -20,7 +14,7 @@ const CarGuessingGame: React.FC = () => {
   const [isCorrect, setIsCorrect] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [_gameReady, setGameReady] = useState(false);
+  const [isGameReady, setGameReady] = useState(false);
   const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -32,7 +26,6 @@ const CarGuessingGame: React.FC = () => {
   const [audioMethod, setAudioMethod] = useState<number>(1);
   const victorySound = useRef<HTMLAudioElement | null>(null);
   const audioElementRef = useRef<HTMLAudioElement>(null);
-  const _gameID = Math.floor(Math.random() * 1000);
 
   useEffect(() => {
     checkGameState();
@@ -289,17 +282,12 @@ const CarGuessingGame: React.FC = () => {
     }
   };
 
-  // Add unused toggleFOV function to fix TypeScript error
-  const _toggleFOV = () => {
-    // No-op function to satisfy TypeScript
-  };
-
   const toggleHowToPlay = () => {
     setShowHowToPlay(!showHowToPlay);
     if (showFAQ) setShowFAQ(false);
   };
 
-  const _toggleFAQ = () => {
+  const toggleFAQ = () => {
     setShowFAQ(!showFAQ);
     if (showHowToPlay) setShowHowToPlay(false);
   };
@@ -722,6 +710,19 @@ const CarGuessingGame: React.FC = () => {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Add a button that actually uses toggleFAQ */}
+      <div className="mt-4">
+        <button 
+          onClick={toggleFAQ}
+          className="flex items-center justify-center w-full bg-wheeldle-card p-4 rounded-lg hover:bg-wheeldle-hover transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 mr-2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+          </svg>
+          <span className="font-bold text-lg">FAQ</span>
+        </button>
       </div>
     </div>
   );

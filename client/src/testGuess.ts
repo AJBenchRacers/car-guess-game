@@ -1,2 +1,3 @@
-// This file is used for testing purposes only
-const _nodeFetch = require('node-fetch'); 
+// This file is intentionally empty for now.
+// It was previously used for testing purposes.
+export {}; 
