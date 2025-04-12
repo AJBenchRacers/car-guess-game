@@ -353,11 +353,13 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 });
 
 // Export for Vercel
-export default app;
+module.exports = app;
 
-// Start server if not in Vercel environment
-if (process.env.NODE_ENV !== 'production') {
+// Start server if not running in Vercel
+if (process.env.VERCEL !== '1') {
   app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
   });
-} 
+}
+
+export default app; 
