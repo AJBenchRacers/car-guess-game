@@ -13,9 +13,8 @@ const port = process.env.PORT || 3000;
 // Middleware with specific CORS configuration
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://cartexto-client.vercel.app', 'https://cartexto-client-fckjm8fnv-alexs-projects-38194e0e.vercel.app']
+    ? ['https://cartexto-fe.vercel.app']
     : 'http://localhost:5173',
-  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -149,14 +148,25 @@ app.get('/api/search/models', async (req, res) => {
 // Get game state endpoint to check if game is started
 app.get('/api/game-state', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM daily_car WHERE id = 1');
+    // First try to connect to the database
+    const connectionTest = await pool.query('SELECT NOW()');
+    console.log('Database connection successful:', connectionTest.rows[0]);
+
+    // Then check for today's car
+    const result = await pool.query('SELECT * FROM daily_cars WHERE date = CURRENT_DATE');
     
     res.json({
-      hasGame: result.rows.length > 0
+      hasGame: result.rows.length > 0,
+      dbConnected: true
     });
-  } catch (error) {
-    console.error('Error fetching game state:', error);
-    res.status(500).json({ error: 'Internal server error' });
+  } catch (error: any) {
+    console.error('Error in /api/game-state:', error);
+    res.status(500).json({ 
+      error: 'Database connection failed',
+      message: error.message,
+      hasGame: false,
+      dbConnected: false
+    });
   }
 });
 

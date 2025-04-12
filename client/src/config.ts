@@ -1,6 +1,6 @@
 // Base API URL
 export const API_URL = process.env.NODE_ENV === 'production'
-  ? import.meta.env.VITE_API_URL || 'https://cartexto.vercel.app'
+  ? import.meta.env.VITE_API_URL || 'https://cartexto-be.vercel.app'
   : 'http://localhost:3000';
 
 // API endpoints
