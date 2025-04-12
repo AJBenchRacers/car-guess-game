@@ -26,11 +26,19 @@ app.get('/', async (req, res) => {
   try {
     // Test database connection
     const testResult = await pool.query('SELECT NOW()');
+    const tablesResult = await pool.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public'
+    `);
+    
     res.json({ 
       status: 'ok',
       database: 'connected',
       timestamp: testResult.rows[0].now,
+      tables: tablesResult.rows.map(row => row.table_name),
       env: {
+        node_env: process.env.NODE_ENV,
         host: process.env.DB_HOST,
         database: process.env.DB_NAME,
         port: process.env.DB_PORT
